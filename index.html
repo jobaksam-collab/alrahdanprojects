@@ -252,16 +252,18 @@
                 document.getElementById('syncStatusText').innerText = 'جاري المزامنة...';
                 const res = await fetch(WEB_APP_URL);
                 const data = await res.json();
+                
+                // التحقق هل السحابة تحتوي على بيانات محفوظة أم لا
                 if (data && data.projects && data.projects.length > 0) {
                     currentData = data.projects;
                     currentData.forEach(p => { if (!p.files) p.files = []; });
                     if (data.reportDate) document.getElementById('reportDate').innerText = data.reportDate;
+                    document.getElementById('syncStatusText').innerText = 'متصل بالسحابة (مباشر)';
                 } else {
+                    // إذا كانت السحابة فارغة لأول مرة، نقوم بحفظ البيانات الافتراضية فيها فوراً لتفعيل الربط
                     currentData = JSON.parse(JSON.stringify(initialData));
-                    // حفظ البيانات الافتراضية لأول مرة تلقائياً للسحابة
-                    saveToCloud();
+                    await saveToCloud(); 
                 }
-                document.getElementById('syncStatusText').innerText = 'متصل بالسحابة (مباشر)';
             } catch (e) {
                 currentData = JSON.parse(JSON.stringify(initialData));
                 document.getElementById('syncStatusText').innerText = 'وضع غير متصل (محلي)';
@@ -599,7 +601,7 @@
 
         function filterTable(skipSave) {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
-            const cat = document.getElementById('categoryFilter5') ? document.getElementById('categoryFilter5').value : document.getElementById('categoryFilter').value;
+            const cat = document.getElementById('categoryFilter').value;
             let filtered = currentData.filter(item => {
                 const matchesCat = cat === "ALL" || item.cat.toString() === cat;
                 const matchesSearch = item.id.toLowerCase().includes(query) || item.project.toLowerCase().includes(query) || item.client.toLowerCase().includes(query);
@@ -618,7 +620,7 @@
             XLSX.writeFile(wb, "شركة_الرهدن_المشاريع.xlsx");
         }
 
-        // استدعاء البيانات تلقائياً بمجرد فتح الصفحة
+        // تشغيل الجلب الفوري من السحابة عند تحميل الصفحة مباشرة
         loadFromCloud();
     </script>
 </body>
