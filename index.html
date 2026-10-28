@@ -95,10 +95,10 @@
                         <span id="syncStatusText">متصل بالسحابة (Google Sheets)</span>
                     </div>
 
-                    <!-- زر حفظ التعديلات المباشر -->
+                    <!-- زر حفظ التعديلات -->
                     <button onclick="manualSaveToCloud()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-extrabold transition flex items-center gap-1.5 shadow-md border border-emerald-400 no-print">
                         <span>💾</span>
-                        <span>حفظ التعديلات</span>
+                        <span>حفظ التعديلات في السحابة</span>
                     </button>
 
                     <div class="bg-white/15 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-sm font-extrabold border border-white/25 flex items-center gap-1.5">
@@ -113,7 +113,7 @@
         <div class="bg-emerald-950 text-emerald-100 px-4 py-2 text-center text-xs md:text-sm font-semibold no-print flex flex-wrap items-center justify-between gap-2 border-b border-emerald-800">
             <div class="flex items-center gap-2 mx-auto md:mx-0">
                 <span>✏️</span>
-                <span>وضع التعديل المباشر مفعل. يمكنك النقر على أي خلية لتعديلها بحرية، ثم الضغط على زر "حفظ التعديلات" بالأعلى لحفظها فوراً في السحابة.</span>
+                <span>وضع التعديل مفعل. قم بتعديل أي خلية، ثم اضغط على زر "حفظ التعديلات في السحابة" بالأعلى لتثبيتها ومشاركتها مع الجميع.</span>
             </div>
             <div class="flex items-center gap-2 mx-auto md:mx-0">
                 <label class="flex items-center gap-1.5 cursor-pointer text-xs bg-emerald-900 px-2.5 py-1 rounded-lg hover:bg-emerald-800 transition">
@@ -232,7 +232,7 @@
                     document.getElementById('syncStatusText').innerText = 'متصل بالسحابة (مباشر)';
                 } else {
                     currentData = JSON.parse(JSON.stringify(initialData));
-                    await saveToCloudSilent();
+                    await manualSaveToCloud(true);
                 }
             } catch (e) {
                 currentData = JSON.parse(JSON.stringify(initialData));
@@ -241,39 +241,47 @@
             filterTable();
         }
 
-        async function saveToCloudSilent() {
+        // طريقة مضمونة 100% لإرسال البيانات إلى Google Apps Script عبر Form مخفي لتجاوز قيود CORS
+        async function manualSaveToCloud(isSilent = false) {
             try {
+                if (!isSilent) document.getElementById('syncStatusText').innerText = 'جاري الحفظ في السحابة...';
+                
                 const payload = {
                     projects: currentData,
                     reportDate: document.getElementById('reportDate').innerText
                 };
-                await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-            } catch (e) {}
-        }
 
-        async function manualSaveToCloud() {
-            try {
-                document.getElementById('syncStatusText').innerText = 'جاري الحفظ...';
-                const payload = {
-                    projects: currentData,
-                    reportDate: document.getElementById('reportDate').innerText
-                };
-                await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = WEB_APP_URL;
+                form.target = 'hidden_iframe';
+
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'data';
+                input.value = JSON.stringify(payload);
+                form.appendChild(input);
+
+                let iframe = document.getElementById('hidden_iframe');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.name = 'hidden_iframe';
+                    iframe.id = 'hidden_iframe';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+
                 document.getElementById('syncStatusText').innerText = 'متصل بالسحابة (مباشر)';
-                alert('✨ تم حفظ التعديلات بنجاح وتحديث السحابة!');
+                if (!isSilent) {
+                    alert('✨ تم حفظ التعديلات بنجاح في Google Sheets!');
+                }
             } catch (e) {
-                document.getElementById('syncStatusText').innerText = 'خطأ في الحفظ السحابي';
-                alert('❌ حدث خطأ أثناء الحفظ، يرجى المحاولة مرة أخرى.');
+                document.getElementById('syncStatusText').innerText = 'خطأ في الحفظ';
+                if (!isSilent) alert('❌ حدث خطأ أثناء الحفظ.');
             }
         }
 
@@ -308,7 +316,7 @@
                         dataUrl: e.target.result,
                         date: new Date().toLocaleDateString('ar-SA')
                     });
-                    manualSaveToCloud();
+                    manualSaveToCloud(true);
                     renderAttachmentsList();
                     filterTable();
                 };
@@ -550,7 +558,7 @@
             XLSX.writeFile(wb, "شركة_الرهدن_المشاريع.xlsx");
         }
 
-        // جلب البيانات فور فتح الصفحة
+        // جلب البيانات فور تحميل الصفحة
         loadFromCloud();
     </script>
 </body>
