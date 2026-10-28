@@ -6,7 +6,6 @@
     <title>شركة الرهدن - لوحة تحكم وبيان المشاريع القائمة والمرفقات</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
         body { font-family: 'Cairo', sans-serif; }
@@ -186,19 +185,6 @@
             </div>
         </div>
 
-        <!-- Charts Dashboard -->
-        <div class="bg-slate-50/60 border-b border-slate-200 p-4 no-print">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="text-base md:text-lg font-extrabold text-slate-800 flex items-center gap-2"><span>📈</span> لوحة المؤشرات والرسوم البيانية</h3>
-                <button onclick="toggleDashboard()" id="toggleDashBtn" class="text-xs font-bold bg-white border border-slate-300 px-3 py-1.5 rounded-lg shadow-sm">إخفاء الرسوم ▲</button>
-            </div>
-            <div id="dashboardCharts" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h4 class="text-xs font-bold text-slate-700 mb-2 text-center">مقارنة الأقسام الثلاثة</h4><div class="h-64 relative"><canvas id="categoryChart"></canvas></div></div>
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h4 class="text-xs font-bold text-slate-700 mb-2 text-center">توزيع المحفظة المالية</h4><div class="h-64 relative flex items-center justify-center"><canvas id="portfolioChart"></canvas></div></div>
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h4 class="text-xs font-bold text-slate-700 mb-2 text-center">أعلى المشاريع بالمتبقي</h4><div class="h-64 relative"><canvas id="topProjectsChart"></canvas></div></div>
-            </div>
-        </div>
-
         <!-- Controls -->
         <div class="p-4 bg-white border-b border-slate-200 no-print flex flex-wrap gap-3 items-center justify-between">
             <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto flex-1">
@@ -260,9 +246,6 @@
         let isUnlocked = false;
         let pendingAction = null;
         let activeProjectIndexForFiles = null;
-        let categoryChartInstance = null;
-        let portfolioChartInstance = null;
-        let topProjectsChartInstance = null;
 
         async function loadFromCloud() {
             try {
@@ -452,7 +435,6 @@
             const container = document.getElementById('sectionsContainer');
             container.innerHTML = '';
             let grandTotal = { projectValue: 0, paid: 0, billed: 0, unbilledNoVat: 0, unpaidNoVat: 0, tax: 0, unpaidWithVat: 0 };
-            let catSummaries = { 1: {value:0, paid:0, unpaid:0}, 2: {value:0, paid:0, unpaid:0}, 3: {value:0, paid:0, unpaid:0} };
             const editAttr = isUnlocked ? 'true' : 'false';
 
             [1, 2, 3].forEach(catId => {
@@ -504,7 +486,6 @@
                     `;
                 });
 
-                catSummaries[catId] = { value: catTotal.projectValue, paid: catTotal.paid, unpaid: catTotal.unpaidWithVat };
                 grandTotal.projectValue += catTotal.projectValue; grandTotal.paid += catTotal.paid;
                 grandTotal.billed += catTotal.billed; grandTotal.unbilledNoVat += catTotal.unbilledNoVat;
                 grandTotal.unpaidNoVat += catTotal.unpaidNoVat; grandTotal.tax += catTotal.tax; grandTotal.unpaidWithVat += catTotal.unpaidWithVat;
@@ -566,55 +547,6 @@
             document.getElementById('grandBilled').textContent = formatNum(grandTotal.billed);
             document.getElementById('grandUnbilled').textContent = formatNum(grandTotal.unbilledNoVat);
             document.getElementById('grandUnpaidVat').textContent = formatNum(grandTotal.unpaidWithVat);
-
-            updateCharts(data, grandTotal, catSummaries);
-        }
-
-        function updateCharts(data, grandTotal, catSummaries) {
-            const ctxCat = document.getElementById('categoryChart').getContext('2d');
-            if (categoryChartInstance) categoryChartInstance.destroy();
-            categoryChartInstance = new Chart(ctxCat, {
-                type: 'bar',
-                data: {
-                    labels: ['تمت الفوترة', 'مفوتر جزئياً', 'تم التعميد'],
-                    datasets: [
-                        { label: 'العقود', data: [catSummaries[1].value, catSummaries[2].value, catSummaries[3].value], backgroundColor: '#0284c7' },
-                        { label: 'المسدد', data: [catSummaries[1].paid, catSummaries[2].paid, catSummaries[3].paid], backgroundColor: '#10b981' },
-                        { label: 'المتبقي', data: [catSummaries[1].unpaid, catSummaries[2].unpaid, catSummaries[3].unpaid], backgroundColor: '#7e22ce' }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10 } } } }
-            });
-
-            const ctxPort = document.getElementById('portfolioChart').getContext('2d');
-            if (portfolioChartInstance) portfolioChartInstance.destroy();
-            const billedUnpaid = Math.max(0, grandTotal.billed - grandTotal.paid);
-            const unbilledWithVat = Math.max(0, grandTotal.unpaidWithVat - billedUnpaid);
-            portfolioChartInstance = new Chart(ctxPort, {
-                type: 'doughnut',
-                data: {
-                    labels: ['المسدد الفعلي', 'مفوتر قيد التحصيل', 'غير مفوتر'],
-                    datasets: [{ data: [grandTotal.paid, billedUnpaid, unbilledWithVat], backgroundColor: ['#10b981', '#f59e0b', '#8b5cf6'] }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10 } } } }
-            });
-
-            const sortedByUnpaid = [...data].sort((a, b) => b.unpaidWithVat - a.unpaidWithVat).slice(0, 5);
-            const ctxTop = document.getElementById('topProjectsChart').getContext('2d');
-            if (topProjectsChartInstance) topProjectsChartInstance.destroy();
-            topProjectsChartInstance = new Chart(ctxTop, {
-                type: 'bar',
-                data: {
-                    labels: sortedByUnpaid.map(d => d.project.length > 15 ? d.project.substring(0, 15) + '...' : d.project),
-                    datasets: [{ label: 'المتبقي', data: sortedByUnpaid.map(d => d.unpaidWithVat), backgroundColor: '#6d28d9' }]
-                },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
-        }
-
-        function toggleDashboard() {
-            const dash = document.getElementById('dashboardCharts');
-            dash.classList.toggle('hidden');
         }
 
         function updateCell(index, field, value) {
@@ -663,7 +595,7 @@
             }
         }
 
-        function filterTable() {
+        function filterTable(skipSave) {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             const cat = document.getElementById('categoryFilter').value;
             let filtered = currentData.filter(item => {
