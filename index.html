@@ -25,9 +25,6 @@
             box-shadow: inset 0 0 0 1px #94a3b8;
             background-color: rgba(255,255,255,0.6);
         }
-        [contenteditable="false"] {
-            cursor: default;
-        }
 
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
@@ -55,29 +52,6 @@
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen p-2 md:p-5 text-slate-800">
-
-    <!-- Password Modal -->
-    <div id="passwordModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 no-print">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200">
-            <div class="flex items-center justify-between mb-4 border-b pb-3">
-                <h3 class="text-lg font-extrabold text-slate-800 flex items-center gap-2">
-                    <span>🔐</span> تفعيل وضع التعديل
-                </h3>
-                <button onclick="closePasswordModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
-            </div>
-            <p class="text-sm text-slate-600 mb-4">يرجى إدخال كلمة المرور للسماح بتعديل الأرقام، رفع الفواتير، أو إضافة وحذف المشاريع.</p>
-            <div class="mb-4">
-                <label class="block text-xs font-bold text-slate-700 mb-1">كلمة المرور</label>
-                <input type="password" id="passwordInput" onkeydown="if(event.key==='Enter') verifyPassword()" placeholder="كلمة المرور الافتراضية: 1234" 
-                       class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600">
-                <p id="passwordError" class="text-xs text-red-600 font-bold mt-1.5 hidden">❌ كلمة المرور غير صحيحة!</p>
-            </div>
-            <div class="flex justify-end gap-2">
-                <button onclick="closePasswordModal()" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100">إلغاء</button>
-                <button onclick="verifyPassword()" class="px-5 py-2 rounded-xl text-sm font-bold bg-blue-700 hover:bg-blue-800 text-white shadow-md">تأكيد</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Attachments Viewer Modal -->
     <div id="attachmentsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 no-print">
@@ -121,28 +95,29 @@
                         <span id="syncStatusText">متصل بالسحابة (Google Sheets)</span>
                     </div>
 
-                    <button id="lockToggleBtn" onclick="toggleEditLock()" class="bg-red-500/90 hover:bg-red-600 text-white px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-extrabold transition flex items-center gap-1.5 shadow-md border border-red-400 no-print">
-                        <span id="lockIcon">🔒</span>
-                        <span id="lockText">وضع القراءة (اضغط للتعديل)</span>
+                    <!-- زر حفظ التعديلات المباشر -->
+                    <button onclick="manualSaveToCloud()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-extrabold transition flex items-center gap-1.5 shadow-md border border-emerald-400 no-print">
+                        <span>💾</span>
+                        <span>حفظ التعديلات</span>
                     </button>
 
                     <div class="bg-white/15 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-sm font-extrabold border border-white/25 flex items-center gap-1.5">
                         <span>📅</span>
-                        <span id="reportDate" contenteditable="false" onblur="saveState()">18/10/2026</span>
+                        <span id="reportDate" contenteditable="true">18/10/2026</span>
                     </div>
                 </div>
             </div>
         </header>
 
         <!-- Notification & Mode Banner -->
-        <div id="modeBanner" class="bg-slate-800 text-slate-200 px-4 py-2 text-center text-xs md:text-sm font-semibold no-print flex flex-wrap items-center justify-between gap-2 border-b border-slate-700">
+        <div class="bg-emerald-950 text-emerald-100 px-4 py-2 text-center text-xs md:text-sm font-semibold no-print flex flex-wrap items-center justify-between gap-2 border-b border-emerald-800">
             <div class="flex items-center gap-2 mx-auto md:mx-0">
-                <span id="bannerIcon">🔒</span>
-                <span id="bannerText">الملف محمي ضد التعديل. لتعديل البيانات، رفع الفواتير والمستندات، أو إضافة مشاريع، اضغط على زر "وضع القراءة" بأعلى الصفحة (كلمة المرور: 1234).</span>
+                <span>✏️</span>
+                <span>وضع التعديل المباشر مفعل. يمكنك النقر على أي خلية لتعديلها بحرية، ثم الضغط على زر "حفظ التعديلات" بالأعلى لحفظها فوراً في السحابة.</span>
             </div>
             <div class="flex items-center gap-2 mx-auto md:mx-0">
-                <label class="flex items-center gap-1.5 cursor-pointer text-xs bg-slate-700 px-2.5 py-1 rounded-lg hover:bg-slate-600 transition">
-                    <input type="checkbox" id="autoCalcToggle" checked onchange="saveState()" class="rounded text-blue-500">
+                <label class="flex items-center gap-1.5 cursor-pointer text-xs bg-emerald-900 px-2.5 py-1 rounded-lg hover:bg-emerald-800 transition">
+                    <input type="checkbox" id="autoCalcToggle" checked class="rounded text-blue-500">
                     <span>حساب تلقائي للضريبة والمتبقي</span>
                 </label>
             </div>
@@ -197,8 +172,8 @@
                 </select>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <button onclick="handleProtectedAction(addNewRow)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm">➕ إضافة مشروع</button>
-                <button onclick="handleProtectedAction(resetData)" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm">🔄 إعادة تعيين</button>
+                <button onclick="addNewRow()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm">➕ إضافة مشروع</button>
+                <button onclick="resetData()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm">🔄 إعادة تعيين</button>
                 <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm">📊 Excel</button>
                 <button onclick="window.print()" class="bg-sky-600 hover:bg-sky-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm font-bold shadow-sm">🖨️ طباعة</button>
             </div>
@@ -243,8 +218,6 @@
         ];
 
         let currentData = [];
-        let isUnlocked = false;
-        let pendingAction = null;
         let activeProjectIndexForFiles = null;
 
         async function loadFromCloud() {
@@ -252,26 +225,38 @@
                 document.getElementById('syncStatusText').innerText = 'جاري المزامنة...';
                 const res = await fetch(WEB_APP_URL);
                 const data = await res.json();
-                
-                // التحقق هل السحابة تحتوي على بيانات محفوظة أم لا
                 if (data && data.projects && data.projects.length > 0) {
                     currentData = data.projects;
                     currentData.forEach(p => { if (!p.files) p.files = []; });
                     if (data.reportDate) document.getElementById('reportDate').innerText = data.reportDate;
                     document.getElementById('syncStatusText').innerText = 'متصل بالسحابة (مباشر)';
                 } else {
-                    // إذا كانت السحابة فارغة لأول مرة، نقوم بحفظ البيانات الافتراضية فيها فوراً لتفعيل الربط
                     currentData = JSON.parse(JSON.stringify(initialData));
-                    await saveToCloud(); 
+                    await saveToCloudSilent();
                 }
             } catch (e) {
                 currentData = JSON.parse(JSON.stringify(initialData));
                 document.getElementById('syncStatusText').innerText = 'وضع غير متصل (محلي)';
             }
-            filterTable(true);
+            filterTable();
         }
 
-        async function saveToCloud() {
+        async function saveToCloudSilent() {
+            try {
+                const payload = {
+                    projects: currentData,
+                    reportDate: document.getElementById('reportDate').innerText
+                };
+                await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (e) {}
+        }
+
+        async function manualSaveToCloud() {
             try {
                 document.getElementById('syncStatusText').innerText = 'جاري الحفظ...';
                 const payload = {
@@ -285,55 +270,10 @@
                     body: JSON.stringify(payload)
                 });
                 document.getElementById('syncStatusText').innerText = 'متصل بالسحابة (مباشر)';
+                alert('✨ تم حفظ التعديلات بنجاح وتحديث السحابة!');
             } catch (e) {
                 document.getElementById('syncStatusText').innerText = 'خطأ في الحفظ السحابي';
-            }
-        }
-
-        function toggleEditLock() {
-            isUnlocked = !isUnlocked;
-            const btn = document.getElementById('lockToggleBtn');
-            const icon = document.getElementById('lockIcon');
-            const text = document.getElementById('lockText');
-            const banner = document.getElementById('modeBanner');
-            const bannerIcon = document.getElementById('bannerIcon');
-            const bannerText = document.getElementById('bannerText');
-            const reportDateEl = document.getElementById('reportDate');
-
-            if (isUnlocked) {
-                btn.className = "bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-extrabold transition flex items-center gap-1.5 shadow-md border border-emerald-400 no-print";
-                icon.innerText = "🔓"; text.innerText = "وضع التعديل مفعل (اضغط للقفل)";
-                banner.className = "bg-emerald-950 text-emerald-100 px-4 py-2 text-center text-xs md:text-sm font-semibold no-print flex flex-wrap items-center justify-between gap-2 border-b border-emerald-800";
-                bannerIcon.innerText = "✏️"; bannerText.innerText = "وضع التعديل مفعل! يمكنك النقر على أي خلية لتعديلها أو رفع فواتير ومستندات لكل مشروع.";
-                reportDateEl.setAttribute('contenteditable', 'true');
-            } else {
-                btn.className = "bg-red-500/90 hover:bg-red-600 text-white px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-extrabold transition flex items-center gap-1.5 shadow-md border border-red-400 no-print";
-                icon.innerText = "🔒"; text.innerText = "وضع القراءة (اضغط للتعديل)";
-                banner.className = "bg-slate-800 text-slate-200 px-4 py-2 text-center text-xs md:text-sm font-semibold no-print flex flex-wrap items-center justify-between gap-2 border-b border-slate-700";
-                bannerIcon.innerText = "🔒"; bannerText.innerText = "الملف محمي. لتعديل البيانات، رفع الفواتير، أو إضافة مشاريع، اضغط على زر وضع القراءة بأعلى الصفحة (كلمة المرور: 1234).";
-                reportDateEl.setAttribute('contenteditable', 'false');
-            }
-            filterTable(true);
-        }
-
-        function handleProtectedAction(actionFn) {
-            if (isUnlocked) {
-                actionFn();
-            } else {
-                pendingAction = actionFn;
-                document.getElementById('passwordInput').value = '';
-                document.getElementById('passwordError').classList.add('hidden');
-                document.getElementById('passwordModal').classList.remove('hidden');
-            }
-        }
-        function closePasswordModal() { document.getElementById('passwordModal').classList.add('hidden'); pendingAction = null; }
-        function verifyPassword() {
-            if (document.getElementById('passwordInput').value === '1234') {
-                toggleEditLock();
-                closePasswordModal();
-                if (pendingAction) { pendingAction(); pendingAction = null; }
-            } else {
-                document.getElementById('passwordError').classList.remove('hidden');
+                alert('❌ حدث خطأ أثناء الحفظ، يرجى المحاولة مرة أخرى.');
             }
         }
 
@@ -368,9 +308,9 @@
                         dataUrl: e.target.result,
                         date: new Date().toLocaleDateString('ar-SA')
                     });
-                    saveToCloud();
+                    manualSaveToCloud();
                     renderAttachmentsList();
-                    filterTable(true);
+                    filterTable();
                 };
                 reader.readAsDataURL(file);
             }
@@ -398,7 +338,7 @@
                     </div>
                     <div class="flex items-center gap-2 no-print">
                         <a href="${file.dataUrl}" download="${file.name}" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded-lg font-bold">تحميل</a>
-                        ${isUnlocked ? `<button onclick="deleteFile(${activeProjectIndexForFiles}, ${fIdx})" class="text-red-500 hover:bg-red-50 p-1 rounded font-bold">حذف</button>` : ''}
+                        <button onclick="deleteFile(${activeProjectIndexForFiles}, ${fIdx})" class="text-red-500 hover:bg-red-50 p-1 rounded font-bold">حذف</button>
                     </div>
                 `;
                 listContainer.appendChild(item);
@@ -408,9 +348,8 @@
         function deleteFile(projIdx, fileIdx) {
             if (confirm("هل تريد حذف هذا المرفق؟")) {
                 currentData[projIdx].files.splice(fileIdx, 1);
-                saveToCloud();
                 renderAttachmentsList();
-                filterTable(true);
+                filterTable();
             }
         }
 
@@ -439,7 +378,6 @@
             const container = document.getElementById('sectionsContainer');
             container.innerHTML = '';
             let grandTotal = { projectValue: 0, paid: 0, billed: 0, unbilledNoVat: 0, unpaidNoVat: 0, tax: 0, unpaidWithVat: 0 };
-            const editAttr = isUnlocked ? 'true' : 'false';
 
             [1, 2, 3].forEach(catId => {
                 const catData = data.filter(d => d.cat === catId);
@@ -465,27 +403,27 @@
                     rowsHtml += `
                         <tr class="hover:bg-slate-50 transition border-b border-slate-200">
                             <td class="p-2 border font-bold bg-slate-50 text-slate-600">${idx + 1}</td>
-                            <td class="p-2 border text-blue-700 font-bold" contenteditable="${editAttr}" onblur="updateCell(${dataIndex}, 'id', this.innerText)">${row.id}</td>
-                            <td class="p-2 border font-bold text-slate-800" contenteditable="${editAttr}" onblur="updateCell(${dataIndex}, 'project', this.innerText)">${row.project}</td>
-                            <td class="p-2 border text-slate-700" contenteditable="${editAttr}" onblur="updateCell(${dataIndex}, 'client', this.innerText)">${row.client}</td>
-                            <td class="p-2 border bg-sky-50 font-bold text-blue-950" contenteditable="${editAttr}" onblur="updateCell(${dataIndex}, 'projectValue', this.innerText)">${formatNum(row.projectValue)}</td>
-                            <td class="p-2 border bg-emerald-50 text-emerald-800 font-bold" contenteditable="${editAttr}" onblur="updateCell(${dataIndex}, 'paid', this.innerText)">
+                            <td class="p-2 border text-blue-700 font-bold" contenteditable="true" onblur="updateCell(${dataIndex}, 'id', this.innerText)">${row.id}</td>
+                            <td class="p-2 border font-bold text-slate-800" contenteditable="true" onblur="updateCell(${dataIndex}, 'project', this.innerText)">${row.project}</td>
+                            <td class="p-2 border text-slate-700" contenteditable="true" onblur="updateCell(${dataIndex}, 'client', this.innerText)">${row.client}</td>
+                            <td class="p-2 border bg-sky-50 font-bold text-blue-950" contenteditable="true" onblur="updateCell(${dataIndex}, 'projectValue', this.innerText)">${formatNum(row.projectValue)}</td>
+                            <td class="p-2 border bg-emerald-50 text-emerald-800 font-bold" contenteditable="true" onblur="updateCell(${dataIndex}, 'paid', this.innerText)">
                                 <div>${formatNum(row.paid)}</div>
                                 <div class="w-full bg-emerald-200 h-1 rounded-full mt-1 no-print"><div class="bg-emerald-600 h-1 rounded-full" style="width:${paidPercent}%"></div></div>
                             </td>
-                            <td class="p-2 border bg-teal-50 font-bold text-teal-900" contenteditable="${editAttr}" onblur="updateCell(${dataIndex}, 'billed', this.innerText)">${formatNum(row.billed)}</td>
-                            <td class="p-2 border bg-pink-50 font-bold text-pink-950" contenteditable="${editAttr}" onblur="updateCell(${dataIndex}, 'unbilledNoVat', this.innerText)">${formatNum(row.unbilledNoVat)}</td>
-                            <td class="p-2 border bg-amber-50 font-bold text-blue-900" contenteditable="${editAttr}" onblur="updateCell(${dataIndex}, 'unpaidNoVat', this.innerText)">${formatNum(row.unpaidNoVat)}</td>
-                            <td class="p-2 border bg-emerald-50/50 text-red-600 font-bold" contenteditable="${editAttr}" onblur="updateCell(${dataIndex}, 'tax', this.innerText)">${formatNum(row.tax)}</td>
-                            <td class="p-2 border bg-purple-50 text-purple-900 font-black" contenteditable="${editAttr}" onblur="updateCell(${dataIndex}, 'unpaidWithVat', this.innerText)">${formatNum(row.unpaidWithVat)}</td>
-                            <td class="p-2 border text-xs text-slate-600" contenteditable="${editAttr}" onblur="updateCell(${dataIndex}, 'note', this.innerText)">${row.note}</td>
+                            <td class="p-2 border bg-teal-50 font-bold text-teal-900" contenteditable="true" onblur="updateCell(${dataIndex}, 'billed', this.innerText)">${formatNum(row.billed)}</td>
+                            <td class="p-2 border bg-pink-50 font-bold text-pink-950" contenteditable="true" onblur="updateCell(${dataIndex}, 'unbilledNoVat', this.innerText)">${formatNum(row.unbilledNoVat)}</td>
+                            <td class="p-2 border bg-amber-50 font-bold text-blue-900" contenteditable="true" onblur="updateCell(${dataIndex}, 'unpaidNoVat', this.innerText)">${formatNum(row.unpaidNoVat)}</td>
+                            <td class="p-2 border bg-emerald-50/50 text-red-600 font-bold" contenteditable="true" onblur="updateCell(${dataIndex}, 'tax', this.innerText)">${formatNum(row.tax)}</td>
+                            <td class="p-2 border bg-purple-50 text-purple-900 font-black" contenteditable="true" onblur="updateCell(${dataIndex}, 'unpaidWithVat', this.innerText)">${formatNum(row.unpaidWithVat)}</td>
+                            <td class="p-2 border text-xs text-slate-600" contenteditable="true" onblur="updateCell(${dataIndex}, 'note', this.innerText)">${row.note}</td>
                             <td class="p-2 border text-center">
                                 <button onclick="openAttachmentsModal(${dataIndex})" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-2.5 py-1 rounded-lg text-xs flex items-center justify-center gap-1 mx-auto transition border border-indigo-200">
                                     <span>📎</span>
                                     <span>(${fileCount})</span>
                                 </button>
                             </td>
-                            <td class="p-2 border no-print"><button onclick="deleteRow(${dataIndex})" class="text-red-500 hover:text-red-700 font-bold ${isUnlocked?'':'opacity-30'}">🗑️</button></td>
+                            <td class="p-2 border no-print"><button onclick="deleteRow(${dataIndex})" class="text-red-500 hover:text-red-700 font-bold">🗑️</button></td>
                         </tr>
                     `;
                 });
@@ -554,7 +492,6 @@
         }
 
         function updateCell(index, field, value) {
-            if (!isUnlocked) return;
             const numericFields = ['projectValue', 'paid', 'billed', 'unbilledNoVat', 'unpaidNoVat', 'tax', 'unpaidWithVat'];
             if (numericFields.includes(field)) {
                 currentData[index][field] = parseNum(value);
@@ -569,37 +506,30 @@
             } else {
                 currentData[index][field] = value.trim();
             }
-            saveToCloud();
-            filterTable(true);
+            filterTable();
         }
 
         function deleteRow(index) {
-            if (!isUnlocked) return;
             if (confirm("هل تريد حذف هذا المشروع؟")) {
                 currentData.splice(index, 1);
-                saveToCloud();
-                filterTable(true);
+                filterTable();
             }
         }
 
         function addNewRow() {
-            if (!isUnlocked) return;
             const cat = parseInt(document.getElementById('categoryFilter').value === "ALL" ? "1" : document.getElementById('categoryFilter').value);
             currentData.push({ cat: cat, id: "CQ-NEW", project: "مشروع جديد", client: "العميل", projectValue: 0, paid: 0, billed: 0, unbilledNoVat: 0, unpaidNoVat: 0, tax: 0, unpaidWithVat: 0, note: "-", files: [] });
-            saveToCloud();
-            filterTable(true);
+            filterTable();
         }
 
         function resetData() {
-            if (!isUnlocked) return;
             if (confirm("استعادة البيانات الافتراضية؟")) {
                 currentData = JSON.parse(JSON.stringify(initialData));
-                saveToCloud();
-                filterTable(true);
+                filterTable();
             }
         }
 
-        function filterTable(skipSave) {
+        function filterTable() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             const cat = document.getElementById('categoryFilter').value;
             let filtered = currentData.filter(item => {
@@ -620,7 +550,7 @@
             XLSX.writeFile(wb, "شركة_الرهدن_المشاريع.xlsx");
         }
 
-        // تشغيل الجلب الفوري من السحابة عند تحميل الصفحة مباشرة
+        // جلب البيانات فور فتح الصفحة
         loadFromCloud();
     </script>
 </body>
