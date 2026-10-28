@@ -222,7 +222,7 @@
     </div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyTDbCjUuhg239uCMNcHuEi_8qVcaTOnk1FFKfMMSQXe3AWnWENNDtUy5qI3IRY900nhA/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyqtWxGQZ_YTYiAQC0EXsyAhd3hFMPH-k6zl91hTlI8qIGCJggGd5G8p8T9439VYNsV/exec";
         
         const initialData = [
             { cat: 1, id: "CQ-00001759", project: "فندق ابراج مكه", client: "شركة مكه للانشاء والتعمير", projectValue: 5000000, paid: 4950000, billed: 5000000, unbilledNoVat: 0, unpaidNoVat: 43478, tax: 6522, unpaidWithVat: 50000, note: "متبقي المشروع / باقي مشروع الغلايات", files: [] },
@@ -258,6 +258,8 @@
                     if (data.reportDate) document.getElementById('reportDate').innerText = data.reportDate;
                 } else {
                     currentData = JSON.parse(JSON.stringify(initialData));
+                    // حفظ البيانات الافتراضية لأول مرة تلقائياً للسحابة
+                    saveToCloud();
                 }
                 document.getElementById('syncStatusText').innerText = 'متصل بالسحابة (مباشر)';
             } catch (e) {
@@ -597,7 +599,7 @@
 
         function filterTable(skipSave) {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
-            const cat = document.getElementById('categoryFilter').value;
+            const cat = document.getElementById('categoryFilter5') ? document.getElementById('categoryFilter5').value : document.getElementById('categoryFilter').value;
             let filtered = currentData.filter(item => {
                 const matchesCat = cat === "ALL" || item.cat.toString() === cat;
                 const matchesSearch = item.id.toLowerCase().includes(query) || item.project.toLowerCase().includes(query) || item.client.toLowerCase().includes(query);
@@ -616,6 +618,7 @@
             XLSX.writeFile(wb, "شركة_الرهدن_المشاريع.xlsx");
         }
 
+        // استدعاء البيانات تلقائياً بمجرد فتح الصفحة
         loadFromCloud();
     </script>
 </body>
